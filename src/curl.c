@@ -21,16 +21,24 @@ void objectcurl_printfn(object *obj, void *v) {
 }
 
 void objectcurl_markfn(object *obj, void *v) {
+    objectcurl *curl = (objectcurl *) obj;
+    morpho_markvarrayvalue(v, &curl->urls);
+}
+
+void objectcurl_freefn(object *obj) {
+    objectcurl *curl = (objectcurl *) obj;
+    varray_valueclear(&curl->urls);
 }
 
 size_t objectcurl_sizefn(object *obj) {
-    return sizeof(objecttuple);
+    objectcurl *curl = (objectcurl *) obj;
+    return sizeof(objecttuple) + sizeof(value)*curl->urls.capacity;
 }
 
 objecttypedefn objectcurldefn = {
     .printfn = objectcurl_printfn,
     .markfn = objectcurl_markfn,
-    .freefn = NULL,
+    .freefn = objectcurl_freefn,
     .sizefn = objectcurl_sizefn,
     .hashfn = NULL,
     .cmpfn = NULL
@@ -44,7 +52,8 @@ objectcurl *object_newcurl(int n, value *urls) {
     objectcurl *new = (objectcurl *) object_new(sizeof(objectcurl), OBJECT_CURL);
 
     if (new) {
-        
+        varray_valueinit(&new->urls);
+        varray_valueadd(&new->urls, urls, n);
     }
     
     return new;

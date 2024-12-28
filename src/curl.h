@@ -7,6 +7,8 @@
 #ifndef curl_h
 #define curl_h
 
+#include <morpho.h>
+
 /* -------------------------------------------------------
  * Curl object
  * ------------------------------------------------------- */
@@ -17,6 +19,8 @@ extern objecttype objectcurltype;
 /** A curl object */
 typedef struct {
     object obj;
+    
+    varray_value urls;
 } objectcurl;
 
 /* -------------------------------------------------------
