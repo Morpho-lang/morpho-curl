@@ -23,6 +23,12 @@ typedef struct {
     varray_value urls;
 } objectcurl;
 
+/** Tests whether an object is a tuple */
+#define CURL_ISCURL(val) object_istype(val, OBJECT_CURL)
+
+/** Extracts the objecttuple from a value */
+#define CURL_GETCURL(val) ((objectcurl *) MORPHO_GETOBJECT(val))
+
 /* -------------------------------------------------------
  * Curl class
  * ------------------------------------------------------- */
@@ -37,6 +43,9 @@ typedef struct {
 
 #define CURL_ARGS                         "CurlArgs"
 #define CURL_ARGS_MSG                     "Curl must be initialized with a collection of URLs as strings."
+
+#define CURL_ERROR                        "CurlErr"
+#define CURL_ERROR_MSG                    "Curl error '%s'."
 
 /* -------------------------------------------------------
  * Curl interface

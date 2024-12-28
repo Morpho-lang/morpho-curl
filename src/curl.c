@@ -60,6 +60,53 @@ objectcurl *object_newcurl(int n, value *urls) {
 }
 
 /* **********************************************************************
+ * Curl interface
+ * ********************************************************************** */
+
+/** Raises an error given a curl error code */
+void morphocurl_error(vm *v, CURLcode code) {
+    switch (code) {
+        case CURLE_OK: return;
+        default:
+            morpho_runtimeerror(v, CURL_ERROR, curl_easy_strerror(code));
+    }
+}
+
+static size_t _writecallback(char *ptr, size_t size, size_t n, void *ref) {
+    varray_char *buffer = (varray_char *) ref;
+    varray_charadd(buffer, ptr, (int) n);
+    return n;
+}
+
+bool morphocurl_fetch(objectcurl *curlobj, value *out, CURLcode *result) {
+    CURL *curl;
+    CURLcode res = CURLE_COULDNT_RESOLVE_HOST;
+
+    varray_char buffer;
+    varray_charinit(&buffer);
+    
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, MORPHO_GETCSTRING(curlobj->urls.data[0]));
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _writecallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
+        
+        res = curl_easy_perform(curl);
+
+        if (res==CURLE_OK) *out = object_stringfromvarraychar(&buffer);
+        
+        curl_easy_cleanup(curl);
+    }
+    
+    if (result) *result=res;
+    varray_charclear(&buffer);
+    
+    return (res==CURLE_OK);
+}
+
+/* **********************************************************************
  * Curl class
  * ********************************************************************** */
 
@@ -68,7 +115,7 @@ objectcurl *object_newcurl(int n, value *urls) {
  * ------------------------------------------------------- */
 
 /** Constructor function for Curl */
-value curl_constructor(vm *v, int nargs, value *args) {
+value Curl_constructor(vm *v, int nargs, value *args) {
     value out = MORPHO_NIL;
     
     for (int i=0; i<nargs; i++) { // Check that arguments are all strings
@@ -93,7 +140,15 @@ value curl_constructor(vm *v, int nargs, value *args) {
  * ------------------------------------------------------- */
 
 value Curl_fetch(vm *v, int nargs, value *args) {
-    return MORPHO_NIL;
+    objectcurl *slf = CURL_GETCURL(MORPHO_SELF(args));
+    value out=MORPHO_NIL;
+    
+    CURLcode res;
+    if (!morphocurl_fetch(slf, &out, &res)) morphocurl_error(v, res);
+    
+    if (MORPHO_ISOBJECT(out)) morpho_bindobjects(v, 1, &out);
+    
+    return out;
 }
 
 MORPHO_BEGINCLASS(Curl)
@@ -120,9 +175,10 @@ void curl_initialize(void) {
     object_setveneerclass(OBJECT_CURL, curlclass);
     
     // Curl constructor function
-    morpho_addfunction(CURL_CLASSNAME, "Curl (...)", curl_constructor, MORPHO_FN_CONSTRUCTOR, NULL);
+    morpho_addfunction(CURL_CLASSNAME, "Curl (...)", Curl_constructor, MORPHO_FN_CONSTRUCTOR, NULL);
     
     morpho_defineerror(CURL_ARGS, ERROR_HALT, CURL_ARGS_MSG);
+    morpho_defineerror(CURL_ERROR, ERROR_HALT, CURL_ERROR_MSG);
 }
 
 void curl_finalize(void) { 
