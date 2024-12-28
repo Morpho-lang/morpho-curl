@@ -8,6 +8,18 @@
 #define curl_h
 
 /* -------------------------------------------------------
+ * Curl object
+ * ------------------------------------------------------- */
+
+extern objecttype objectcurltype;
+#define OBJECT_CURL objectcurltype
+
+/** A curl object */
+typedef struct {
+    object obj;
+} objectcurl;
+
+/* -------------------------------------------------------
  * Curl class
  * ------------------------------------------------------- */
 
@@ -18,6 +30,9 @@
 /* -------------------------------------------------------
  * Curl error messages
  * ------------------------------------------------------- */
+
+#define CURL_ARGS                         "CurlArgs"
+#define CURL_ARGS_MSG                     "Curl must be initialized with a collection of URLs as strings."
 
 /* -------------------------------------------------------
  * Curl interface

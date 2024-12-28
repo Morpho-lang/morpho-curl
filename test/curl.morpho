@@ -1,6 +1,6 @@
 
 import curl
 
-var a = Curl("www.google.com").fetch() 
+var a = Curl("www.google.com").fetch()
 
 print a 
