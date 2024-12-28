@@ -1,6 +1,11 @@
 
 import curl
 
-var a = Curl("www.example.com").fetch()
+var a = Curl("https://www.example.com").fetch()
 
-print a.count() 
+for (c,k in a) {
+    System.prnt(c)
+    if (k>512) break
+}
+
+System.prnt("\n")
