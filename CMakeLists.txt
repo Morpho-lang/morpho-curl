@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.14)
 
 project(morpho-curl)
 
@@ -46,7 +46,11 @@ find_library(MORPHO_LIBRARY
     NAMES morpho libmorpho
 )
 
-target_link_libraries(curl ${MORPHO_LIBRARY})
+# Locate libcurl
+find_package(CURL)
+target_include_directories(curl PUBLIC CURL_INCLUDE_DIRS)
+
+target_link_libraries(curl ${MORPHO_LIBRARY} ${CURL_LIBRARIES})
 
 set(CMAKE_INSTALL_PREFIX ..)
 
