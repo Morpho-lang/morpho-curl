@@ -79,7 +79,7 @@ static size_t _writecallback(char *ptr, size_t size, size_t n, void *ref) {
 }
 
 bool morphocurl_fetch(objectcurl *curlobj, value *out, CURLcode *result) {
-    if (curlobj->urls.count<1) return false; 
+    if (curlobj->urls.count<1) return false;
     
     CURL *curl;
     CURLcode res = CURLE_COULDNT_RESOLVE_HOST;
@@ -88,6 +88,7 @@ bool morphocurl_fetch(objectcurl *curlobj, value *out, CURLcode *result) {
     varray_charinit(&buffer);
     
     curl = curl_easy_init();
+    
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, MORPHO_GETCSTRING(curlobj->urls.data[0]));
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -116,18 +117,24 @@ bool morphocurl_fetch(objectcurl *curlobj, value *out, CURLcode *result) {
  * Constructors
  * ------------------------------------------------------- */
 
-/** Constructor function for Curl */
-value Curl_constructor(vm *v, int nargs, value *args) {
+/** Checks that all members of a list of values are strings */
+static bool _checkurls(int n, value *urls) {
+    for (int i=0; i<n; i++) {
+        if (!MORPHO_ISSTRING(urls[i])) return false;
+    }
+    return true;
+}
+
+/** Generic constructor */
+static value curl_constructor(vm *v, int n, value *urls) {
     value out = MORPHO_NIL;
     
-    for (int i=0; i<nargs; i++) { // Check that arguments are all strings
-        if (!MORPHO_ISSTRING(MORPHO_GETARG(args, 0))) {
-            morpho_runtimeerror(v, CURL_ARGS);
-            return MORPHO_NIL;
-        }
+    if (!_checkurls(n, urls)){
+        morpho_runtimeerror(v, CURL_ARGS);
+        return MORPHO_NIL;
     }
     
-    objectcurl *new = object_newcurl(nargs, & MORPHO_GETARG(args, 0));
+    objectcurl *new = object_newcurl(n, urls);
     
     if (new) {
         out=MORPHO_OBJECT(new);
@@ -135,6 +142,23 @@ value Curl_constructor(vm *v, int nargs, value *args) {
     }
     
     return out;
+}
+
+/** Constructor function for Curl */
+value Curl_constructor(vm *v, int nargs, value *args) {
+    return curl_constructor(v, nargs, &MORPHO_GETARG(args, 0));
+}
+
+/** Constructor function for Curl accepting a list of URLs */
+value Curl_listconstructor(vm *v, int nargs, value *args) {
+    objectlist *list = MORPHO_GETLIST(MORPHO_GETARG(args, 0));
+    return curl_constructor(v, list->val.count, list->val.data);
+}
+
+/** Constructor function for Curl accepting a tuple of URLs */
+value Curl_tupleconstructor(vm *v, int nargs, value *args) {
+    objecttuple *tuple = MORPHO_GETTUPLE(MORPHO_GETARG(args, 0));
+    return curl_constructor(v, tuple->length, tuple->tuple);
 }
 
 /* -------------------------------------------------------
@@ -176,7 +200,9 @@ void curl_initialize(void) {
     value curlclass = builtin_addclass(CURL_CLASSNAME, MORPHO_GETCLASSDEFINITION(Curl), MORPHO_NIL);
     object_setveneerclass(OBJECT_CURL, curlclass);
     
-    // Curl constructor function
+    // Curl constructor functions
+    morpho_addfunction(CURL_CLASSNAME, "Curl (Tuple)", Curl_tupleconstructor, MORPHO_FN_CONSTRUCTOR, NULL);
+    morpho_addfunction(CURL_CLASSNAME, "Curl (List)", Curl_listconstructor, MORPHO_FN_CONSTRUCTOR, NULL);
     morpho_addfunction(CURL_CLASSNAME, "Curl (...)", Curl_constructor, MORPHO_FN_CONSTRUCTOR, NULL);
     
     morpho_defineerror(CURL_ARGS, ERROR_HALT, CURL_ARGS_MSG);

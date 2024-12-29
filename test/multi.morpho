@@ -1,0 +1,12 @@
+import curl
+
+var urls = (
+    "https://www.example.com",
+    "https://www.apple.com",
+    "https://www.google.com",
+    "https://www.microsoft.com"
+)
+
+var a = Curl(urls).fetch()
+
+for (doc in a.vals()) print doc.count() 

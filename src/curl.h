@@ -42,7 +42,7 @@ typedef struct {
  * ------------------------------------------------------- */
 
 #define CURL_ARGS                         "CurlArgs"
-#define CURL_ARGS_MSG                     "Curl must be initialized with a collection of URLs as strings."
+#define CURL_ARGS_MSG                     "Curl initializer requires a collection of URLs provided either as strings or as a List."
 
 #define CURL_ERROR                        "CurlErr"
 #define CURL_ERROR_MSG                    "Curl error '%s'."
