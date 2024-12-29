@@ -3,9 +3,11 @@ import curl
 
 var a = Curl("https://www.example.com").fetch()
 
+print a.count() 
+
 for (c,k in a) {
     System.prnt(c)
-    if (k>512) break
+    if (k>4096) break
 }
 
 System.prnt("\n")

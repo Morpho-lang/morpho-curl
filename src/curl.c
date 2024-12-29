@@ -79,6 +79,8 @@ static size_t _writecallback(char *ptr, size_t size, size_t n, void *ref) {
 }
 
 bool morphocurl_fetch(objectcurl *curlobj, value *out, CURLcode *result) {
+    if (curlobj->urls.count<1) return false; 
+    
     CURL *curl;
     CURLcode res = CURLE_COULDNT_RESOLVE_HOST;
 
