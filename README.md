@@ -1,6 +1,9 @@
 # morpho-curl
 
-Morpho extension that provides an interface to the [libcurl](https://curl.se/libcurl/) network transfer library. Curl can, for example, be used to obtain data from a URL.
+Morpho extension that provides a high-level interface to the [libcurl](https://curl.se/libcurl/) network transfer library. You can use this interface to fetch data from a URL in just a couple of lines of morpho code:
+
+    import curl 
+    var data = Curl("www.google.com").fetch()
 
 ## Installation
 

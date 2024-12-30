@@ -14,7 +14,7 @@ Fetch the contents of a URL as a string:
 
     var doc = Curl("www.google.com").fetch()
 
-Fetch the contents of multiple URLs:
+Fetch the contents of multiple URLs at once:
 
     var urls = [ "www.google.com", "www.apple.com", "www.meta.com" ]
     var dict = Curl(urls).fetch()
