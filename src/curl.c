@@ -80,6 +80,7 @@ static size_t _writecallback(char *ptr, size_t size, size_t n, void *ref) {
     return n;
 }
 
+/** Fetch a single URL using the easy interface */
 bool morphocurl_fetch(objectcurl *curlobj, value *out, CURLcode *result) {
     if (curlobj->urls.count<1) return false;
     
@@ -111,13 +112,13 @@ bool morphocurl_fetch(objectcurl *curlobj, value *out, CURLcode *result) {
     return (res==CURLE_OK);
 }
 
-static void _add_transfer(CURLM *cm, value url, varray_char *buffer) {
+static void _add_transfer(CURLM *cm, int id, value url, varray_char *buffer) {
     CURL *curl = curl_easy_init();
     curl_easy_setopt(curl, CURLOPT_URL, MORPHO_GETCSTRING(url));
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _writecallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) buffer);
-    //curl_easy_setopt(curl, CURLOPT_PRIVATE, MORPHO_GETCSTRING(url));
+    curl_easy_setopt(curl, CURLOPT_PRIVATE, (long) id);
     curl_multi_add_handle(cm, curl);
 }
 
@@ -125,21 +126,31 @@ bool morphocurl_multi_fetch(vm *v, objectcurl *curlobj, value *out, CURLcode *re
     int ntransfers = curlobj->urls.count;
     int nremaining = ntransfers;
     int maxParallel = (nremaining < 10 ? nremaining : 10);
-
-    CURLM *curl;
-    CURLMsg *msg;
     
-    varray_char *buffers = MORPHO_MALLOC(ntransfers*sizeof(varray_char));
-    if (!buffers) return false;
+    varray_char *buffers = NULL; /* Array of buffers to hold content */
+    objectdictionary *new = NULL; /* Dictionary to hold the output */
+    
+    CURLM *curl;
+    curl = curl_multi_init();
+    
+    bool success=false;
+    
+    buffers = MORPHO_MALLOC(ntransfers*sizeof(varray_char));
+    if (!buffers) goto morphocurl_multi_fetch_cleanup;
     for (int i=0; i<ntransfers; i++) varray_charinit(&buffers[i]);
     
-    curl = curl_multi_init();
+    new = object_newdictionary();
+    if (!new) goto morphocurl_multi_fetch_cleanup;
+    
+    *out=MORPHO_OBJECT(new);
+    int retainHandle = morpho_retainobjects(v, 1, out);
+    morpho_bindobjects(v, 1, out);
     
     curl_multi_setopt(curl, CURLMOPT_MAXCONNECTS, (long) maxParallel);
     
     int itransfer;
     for (itransfer=0; itransfer<maxParallel; itransfer++) {
-        _add_transfer(curl, curlobj->urls.data[itransfer], &buffers[itransfer]);
+        _add_transfer(curl, itransfer, curlobj->urls.data[itransfer], &buffers[itransfer]);
     }
     
     do {
@@ -147,20 +158,28 @@ bool morphocurl_multi_fetch(vm *v, objectcurl *curlobj, value *out, CURLcode *re
         curl_multi_perform(curl, &nrunning);
         
         int msgq = 0;
+        CURLMsg *msg;
         while ((msg = curl_multi_info_read(curl, &msgq))) {
             if(msg->msg == CURLMSG_DONE) {
                 CURL *e = msg->easy_handle;
-                *result = msg->data.result; /** @warning: broken  */
-                //curl_easy_getinfo(e, CURLINFO_PRIVATE, &url);
+                long id;
+                curl_easy_getinfo(e, CURLINFO_PRIVATE, &id);
+                
+                value result=MORPHO_NIL;
+                if (msg->data.result==CURLE_OK) {
+                    result = object_stringfromvarraychar(&buffers[id]);
+                    morpho_bindobjects(v, 1, &result);
+                }
+                
+                dictionary_insert(&new->dict, curlobj->urls.data[id], result);
+                    
                 curl_multi_remove_handle(curl, e);
                 curl_easy_cleanup(e);
                 nremaining--;
-            } else {
-                // Only CURLMSG_DONE is defined so never get here.
-            }
+            } // Ignore any other message type
             
             if (itransfer < ntransfers) {
-                _add_transfer(curl, curlobj->urls.data[itransfer], &buffers[itransfer]);
+                _add_transfer(curl, itransfer, curlobj->urls.data[itransfer], &buffers[itransfer]);
                 itransfer++;
             }
         }
@@ -168,20 +187,18 @@ bool morphocurl_multi_fetch(vm *v, objectcurl *curlobj, value *out, CURLcode *re
         if (nremaining) curl_multi_wait(curl, NULL, 0, 1000, NULL);
     } while (nremaining);
     
-    objectdictionary *new = object_newdictionary();
+    morpho_releaseobjects(v, retainHandle);
+    success=true;
     
-    if (new) {
-        for (int i=0; i<ntransfers; i++) {
-            value str = object_stringfromvarraychar(&buffers[i]);
-            dictionary_insert(&new->dict, curlobj->urls.data[i], str);
-        }
-        *out=MORPHO_OBJECT(new);
+morphocurl_multi_fetch_cleanup:
+    if (buffers) {
+        for (int i=0; i<ntransfers; i++) varray_charclear(&buffers[i]);
+        MORPHO_FREE(buffers);
     }
     
-    for (int i=0; i<ntransfers; i++) varray_charclear(&buffers[i]);
-    MORPHO_FREE(buffers);
-    
     curl_multi_cleanup(curl);
+    
+    return success;
 }
 
 /* **********************************************************************
