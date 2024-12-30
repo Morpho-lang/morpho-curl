@@ -7,7 +7,7 @@ Morpho extension that provides a high-level interface to the [libcurl](https://c
 
 ## Installation
 
-To install this, ensure you have zeromq installed using:
+To install this, ensure you have libcurl installed using:
 
     brew install libcurl [macOS]
     apt get libcurl-dev  [ubuntu/WSL]
