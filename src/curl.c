@@ -22,12 +22,12 @@ void objectcurl_printfn(object *obj, void *v) {
 
 void objectcurl_markfn(object *obj, void *v) {
     objectcurl *curl = (objectcurl *) obj;
-    morpho_markdictionary(v, &curl->urls);
+    morpho_markvarrayvalue(v, &curl->urls);
 }
 
 void objectcurl_freefn(object *obj) {
     objectcurl *curl = (objectcurl *) obj;
-    dictionary_clear(&curl->urls);
+    varray_valueclear(&curl->urls);
 }
 
 size_t objectcurl_sizefn(object *obj) {
@@ -273,8 +273,49 @@ value Curl_fetch(vm *v, int nargs, value *args) {
     return out;
 }
 
+/** Encodes a string into URL format */
+value Curl_urlencode(vm *v, int nargs, value *args) {
+    value out=MORPHO_NIL;
+    
+    objectstring *str = MORPHO_GETSTRING(MORPHO_GETARG(args, 0));
+    char *stresc = curl_easy_escape(NULL, str->string, (int) str->length);
+    
+    if (stresc) {
+        objectstring *new = object_stringfromcstring(stresc, strlen(stresc));
+        if (new) {
+            out = MORPHO_OBJECT(new);
+            morpho_bindobjects(v, 1, &out);
+        }
+        curl_free(new);
+    }
+
+    return MORPHO_NIL;
+}
+
+/** Encodes a string into URL format */
+value Curl_urldecode(vm *v, int nargs, value *args) {
+    value out=MORPHO_NIL;
+    
+    objectstring *str = MORPHO_GETSTRING(MORPHO_GETARG(args, 0));
+    int outlength;
+    char *stresc = curl_easy_unescape(NULL, str->string, (int) str->length, &outlength);
+    
+    if (stresc) {
+        objectstring *new = object_stringfromcstring(stresc, outlength);
+        if (new) {
+            out = MORPHO_OBJECT(new);
+            morpho_bindobjects(v, 1, &out);
+        }
+        curl_free(new);
+    }
+
+    return MORPHO_NIL;
+}
+
 MORPHO_BEGINCLASS(Curl)
-MORPHO_METHOD(CURL_FETCH_METHOD, Curl_fetch, BUILTIN_FLAGSEMPTY)
+MORPHO_METHOD(CURL_FETCH_METHOD, Curl_fetch, MORPHO_FN_FLAGSEMPTY),
+MORPHO_METHOD_SIGNATURE(CURL_URLENCODE_METHOD, "String (String)", Curl_urlencode, MORPHO_FN_PUREFN),
+MORPHO_METHOD_SIGNATURE(CURL_URLDECODE_METHOD, "String (String)", Curl_urldecode, MORPHO_FN_PUREFN)
 MORPHO_ENDCLASS
 
 /* **********************************************************************

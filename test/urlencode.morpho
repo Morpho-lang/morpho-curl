@@ -1,0 +1,5 @@
+import curl
+
+print Curl.respondsto() 
+
+print Curl.urlEncode("🦋 morpho") 

@@ -36,6 +36,8 @@ typedef struct {
 #define CURL_CLASSNAME                   "Curl"
 
 #define CURL_FETCH_METHOD                "fetch"
+#define CURL_URLENCODE_METHOD            "urlEncode"
+#define CURL_URLDECODE_METHOD            "urlDecode"
 
 /* -------------------------------------------------------
  * Curl error messages
