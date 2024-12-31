@@ -1,5 +1,9 @@
 import curl
 
-print Curl.respondsto() 
+var c = Curl()
 
-print Curl.urlEncode("🦋 morpho") 
+var str = "🦋 morpho"
+var a=c.urlEncode(str) 
+var b=c.urlDecode(a)
+
+print (b==str) // expect: true 

@@ -281,15 +281,12 @@ value Curl_urlencode(vm *v, int nargs, value *args) {
     char *stresc = curl_easy_escape(NULL, str->string, (int) str->length);
     
     if (stresc) {
-        objectstring *new = object_stringfromcstring(stresc, strlen(stresc));
-        if (new) {
-            out = MORPHO_OBJECT(new);
-            morpho_bindobjects(v, 1, &out);
-        }
-        curl_free(new);
+        out = object_stringfromcstring(stresc, strlen(stresc));
+        if (MORPHO_ISSTRING(out)) morpho_bindobjects(v, 1, &out);
+        curl_free(stresc);
     }
 
-    return MORPHO_NIL;
+    return out;
 }
 
 /** Encodes a string into URL format */
@@ -301,15 +298,12 @@ value Curl_urldecode(vm *v, int nargs, value *args) {
     char *stresc = curl_easy_unescape(NULL, str->string, (int) str->length, &outlength);
     
     if (stresc) {
-        objectstring *new = object_stringfromcstring(stresc, outlength);
-        if (new) {
-            out = MORPHO_OBJECT(new);
-            morpho_bindobjects(v, 1, &out);
-        }
-        curl_free(new);
+        out = object_stringfromcstring(stresc, outlength);
+        if (MORPHO_ISSTRING(out)) morpho_bindobjects(v, 1, &out);
+        curl_free(stresc);
     }
 
-    return MORPHO_NIL;
+    return out;
 }
 
 MORPHO_BEGINCLASS(Curl)
