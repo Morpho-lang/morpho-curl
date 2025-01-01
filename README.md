@@ -5,18 +5,26 @@ Morpho extension that provides a high-level interface to the [libcurl](https://c
     import curl 
     var data = Curl("www.google.com").fetch()
 
+You can fetch multiple URLs at once by providing a list or tuple:
+
+    var data = Curl(["www.google.com", "www.meta.org"]).fetch()
+
+The repository includes a number of examples. E.g. use curl to fetch a protein structure from the [Protein databank](https://www.rcsb.org):
+
+    var p2MVH = Curl("https://files.rcsb.org/download/2MVH.pdb").fetch()
+
 ## Installation
 
-To install this, ensure you have libcurl installed using:
+To install the program, ensure you have libcurl installed using:
 
     brew install libcurl [macOS]
     apt get libcurl-dev  [ubuntu/WSL]
 
-Then clone this repository onto your computer in any convenient place:
+Clone this repository onto your computer in any convenient place:
 
     git clone https://github.com/morpho-lang/morpho-curl.git
 
-then add the location of this repository to your .morphopackages file.
+and add the location of this repository to your .morphopackages file.
 
     echo PACKAGEPATH >> ~/.morphopackages 
     where PACKAGEPATH is the location of the git repository.

@@ -21,3 +21,24 @@ Fetch the contents of multiple URLs at once:
 
     for (u in urls) print dict[u].count() 
 
+The results are returned in a Dictionary where the keys are the URLs requested.
+
+[showsubtopics]: # (subtopics)
+
+## urlEncode
+[tagurlencode]: # (urlencode)
+
+The `urlEncode` method converts a provided string into a URL-encoded string.
+
+    var str=Curl().urlEncode("🦋 morpho") 
+
+This allows strings with non-ASCII characters (e.g. unicode characters) to be inserted into URLs. See also `urlDecode`. 
+
+## urlDecode
+[tagurldecode]: # (urldecode)
+
+The `urlDecode` method converts a URL-encoded string into a regular morpho string.
+
+    var str=Curl().urlDecode(urlstr) 
+
+See also `urlEncode`.
