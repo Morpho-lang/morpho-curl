@@ -4,7 +4,7 @@
 # Curl
 [tagcurl]: # (curl)
 
-The `curl` module provides a high-level interface onto the curl network transfer library.
+The `curl` module provides a high-level interface onto the curl network transfer library. Not all functionality is available as yet; please feel free to make suggestions using the bug tracker. 
 
 To use the module, first import it:
 

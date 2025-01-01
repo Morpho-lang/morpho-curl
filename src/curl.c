@@ -11,6 +11,13 @@
 
 #include "curl.h"
 
+// CURL options to support:
+// CURLOPT_USERAGENT
+// CURLOPT_USERNAME
+// CURLOPT_VERBOSE
+// CURLOPT_PASSWORD
+// CURLOPT_NOPROGRESS
+
 /* **********************************************************************
  * Curl objects
  * ********************************************************************** */
