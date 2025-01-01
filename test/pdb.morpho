@@ -1,0 +1,68 @@
+/** Loads a PDB file from the protein databank and visualizes the atoms */
+
+import curl 
+import parser
+import graphics
+
+/* Very simple PDB parser; not suitable for production purposes. 
+   See PDB file format: 
+   https://www.cgl.ucsf.edu/chimera/docs/UsersGuide/tutorials/pdbintro.html */
+
+class PDBParser {
+  init(str) {
+    self.str = str.split("\n")
+    self.graphics = nil
+  }
+
+  parseAtom(Tokenizer tokenizer) {
+    var id = tokenizer.next(),
+        name = tokenizer.next(),
+        res = tokenizer.next(),
+        chain = tokenizer.next(),
+        seq = tokenizer.next(),
+        x = Float(tokenizer.next()),
+        y = Float(tokenizer.next()),
+        z = Float(tokenizer.next())
+
+    print "${id} ${name}: ${x} ${y} ${z}"
+    self.graphics.display(Sphere([x,y,z], 0.5))
+  }
+
+  _domodel(n, all) {
+    self.graphics = Graphics() 
+
+    var inmodel=all
+    for (line in self.str) {
+      var tokenizer=Tokenizer(StringStream(line))
+
+      var tok=tokenizer.next()
+      if (tok=="MODEL") {
+        var m = Int(tokenizer.next())
+        if (m==n) inmodel=true
+      } else if (tok=="ATOM" &&
+                 inmodel) {
+        self.parseAtom(tokenizer) 
+      } else if (tok=="ENDMDL") {
+        inmodel=false
+      }
+    }
+
+    return self.graphics
+  }
+
+  model(n) { // Extract model n
+    return self._domodel(n, false)
+  }
+
+  model() { // Extract all atoms
+    return self._domodel(0, true) 
+  }
+}
+
+// Ubiquitin: "https://files.rcsb.org/download/6NXL.pdb"
+
+var url = "https://files.rcsb.org/download/2MVH.pdb" // A small protein 
+var protein = Curl(url).fetch() 
+
+var prs = PDBParser(protein)
+Show(prs.model(1)) // A PDB file may contain many models 

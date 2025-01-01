@@ -289,7 +289,7 @@ value Curl_urlencode(vm *v, int nargs, value *args) {
     return out;
 }
 
-/** Encodes a string into URL format */
+/** Decodes a string from URL format */
 value Curl_urldecode(vm *v, int nargs, value *args) {
     value out=MORPHO_NIL;
     
