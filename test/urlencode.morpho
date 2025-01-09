@@ -1,9 +1,7 @@
 import curl
 
-var c = Curl()
-
 var str = "🦋 morpho"
-var a=c.urlEncode(str) 
-var b=c.urlDecode(a)
+var a=Curl.urlEncode(str) 
+var b=Curl.urlDecode(a)
 
 print (b==str) // expect: true 
