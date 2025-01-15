@@ -30,7 +30,7 @@ get_filename_component(MORPHO_INCLUDE ${MORPHO_HEADER} DIRECTORY)
 target_include_directories(curl PUBLIC ${MORPHO_INCLUDE})
 
 # Add general header search paths
-target_include_directories(curl PUBLIC /usr/local/include /opt/homebrew/include)
+target_include_directories(curl PUBLIC /usr/local/include /opt/homebrew/include /home/linuxbrew/.linuxbrew/include)
 
 # Add morpho headers in subfolders to MORPHO_INCLUDE
 file(GLOB morpho_subdirectories LIST_DIRECTORIES true ${MORPHO_INCLUDE}/*)
