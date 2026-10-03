@@ -281,7 +281,7 @@ value Curl_fetch(vm *v, int nargs, value *args) {
 }
 
 /** Encodes a string into URL format */
-value Curl_urlencode(vm *v, int nargs, value *args) {
+value Curl_urlencode__string(vm *v, int nargs, value *args) {
     value out=MORPHO_NIL;
     
     objectstring *str = MORPHO_GETSTRING(MORPHO_GETARG(args, 0));
@@ -297,7 +297,7 @@ value Curl_urlencode(vm *v, int nargs, value *args) {
 }
 
 /** Decodes a string from URL format */
-value Curl_urldecode(vm *v, int nargs, value *args) {
+value Curl_urldecode__string(vm *v, int nargs, value *args) {
     value out=MORPHO_NIL;
     
     objectstring *str = MORPHO_GETSTRING(MORPHO_GETARG(args, 0));
@@ -315,8 +315,8 @@ value Curl_urldecode(vm *v, int nargs, value *args) {
 
 MORPHO_BEGINCLASS(Curl)
 MORPHO_METHOD(CURL_FETCH_METHOD, Curl_fetch, MORPHO_FN_FLAGSEMPTY),
-MORPHO_METHOD_SIGNATURE(CURL_URLENCODE_METHOD, "String (String)", Curl_urlencode, MORPHO_FN_PUREFN),
-MORPHO_METHOD_SIGNATURE(CURL_URLDECODE_METHOD, "String (String)", Curl_urldecode, MORPHO_FN_PUREFN)
+MORPHO_METHOD_SIGNATURE(CURL_URLENCODE_METHOD, "String (String)", Curl_urlencode__string, MORPHO_FN_PUREFN),
+MORPHO_METHOD_SIGNATURE(CURL_URLDECODE_METHOD, "String (String)", Curl_urldecode__string, MORPHO_FN_PUREFN)
 MORPHO_ENDCLASS
 
 /* **********************************************************************
