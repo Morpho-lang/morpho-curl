@@ -3,3 +3,4 @@
 build/*
 build-xcode/*
 lib/curl.so
+*.dll
