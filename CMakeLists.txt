@@ -1,59 +1,74 @@
-cmake_minimum_required(VERSION 3.14)
+#-------------------------------------------------------------------------------
+# morpho-curl/CMakeLists.txt
+#-------------------------------------------------------------------------------
 
-project(morpho-curl)
+cmake_minimum_required(VERSION 3.13)
 
-# Build the library as a plugin
-add_library(curl MODULE "") 
+# Default to a Release build when no build type is set.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    message(STATUS "CMAKE_BUILD_TYPE unset; defaulting to Release")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING
+        "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+        "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
 
-# Suppress 'lib' prefix
+project(morpho-curl LANGUAGES C)
+
+# Build the library as a plugin.
+add_library(curl MODULE "")
+
+# Suppress the 'lib' prefix.
 set_target_properties(curl PROPERTIES PREFIX "")
 
-# Add sources
-add_subdirectory(src)
+#-------------------------------------------------------------------------------
+# Release LTO
+#-------------------------------------------------------------------------------
 
-###
+include(CheckIPOSupported)
 
-# Locate the morpho.h header file and store in MORPHO_HEADER
-find_file(MORPHO_HEADER
-          morpho.h 
-          HINTS 
-          /usr/local/opt/morpho
-          /opt/homebrew/opt/morpho
-          /home/linuxbrew/.linuxbrew/include/morpho
-          /usr/local/include/morpho
-          )
-
-# Identify folder that morpho.h is located in from MORPHO_HEADER and store in MORPHO_INCLUDE
-get_filename_component(MORPHO_INCLUDE ${MORPHO_HEADER} DIRECTORY)
-
-# Add morpho headers to MORPHO_INCLUDE
-target_include_directories(curl PUBLIC ${MORPHO_INCLUDE})
-
-# Add general header search paths
-target_include_directories(curl PUBLIC /usr/local/include /opt/homebrew/include /home/linuxbrew/.linuxbrew/include)
-
-# Add morpho headers in subfolders to MORPHO_INCLUDE
-file(GLOB morpho_subdirectories LIST_DIRECTORIES true ${MORPHO_INCLUDE}/*)
-foreach(dir ${morpho_subdirectories})
-    IF(IS_DIRECTORY ${dir})
-        target_include_directories(curl PUBLIC ${dir})
-    ELSE()
-        CONTINUE()
-    ENDIF()
-endforeach()
-
-# Locate libmorpho
-find_library(MORPHO_LIBRARY
-    NAMES morpho libmorpho
+check_ipo_supported(
+    RESULT CURL_IPO_SUPPORTED
+    OUTPUT CURL_IPO_OUTPUT
+    LANGUAGES C
 )
 
-# Locate libcurl
-find_package(CURL)
-target_include_directories(curl PUBLIC CURL_INCLUDE_DIRS)
+if(CURL_IPO_SUPPORTED)
+    set_property(TARGET curl PROPERTY
+        INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    message(STATUS "IPO/LTO enabled for Release")
+else()
+    message(STATUS "IPO/LTO not enabled (${CURL_IPO_OUTPUT})")
+endif()
 
-target_link_libraries(curl ${MORPHO_LIBRARY} ${CURL_LIBRARIES})
+#-------------------------------------------------------------------------------
+# Sources
+#-------------------------------------------------------------------------------
 
-set(CMAKE_INSTALL_PREFIX ..)
+add_subdirectory(src)
 
-# Install the resulting binary
-install(TARGETS curl LIBRARY DESTINATION lib/)
+#-------------------------------------------------------------------------------
+# Dependencies
+#-------------------------------------------------------------------------------
+
+find_package(morpho CONFIG REQUIRED)
+find_package(CURL REQUIRED)
+
+#-------------------------------------------------------------------------------
+# Linking
+#-------------------------------------------------------------------------------
+
+target_link_libraries(curl PRIVATE morpho::morpho CURL::libcurl)
+
+#-------------------------------------------------------------------------------
+# Installation
+#-------------------------------------------------------------------------------
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}"
+        CACHE PATH "Install prefix" FORCE)
+endif()
+
+install(TARGETS curl
+    LIBRARY DESTINATION lib
+)
