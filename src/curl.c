@@ -325,7 +325,7 @@ MORPHO_ENDCLASS
 
 objecttype objectcurltype;
 
-void curl_initialize(void) {
+MORPHO_EXTENSION_EXPORT void curl_initialize(void) {
     curl_global_init(CURL_GLOBAL_ALL);
 
     // Create curl object type
@@ -347,6 +347,6 @@ void curl_initialize(void) {
     morpho_defineerror(CURL_ERROR, ERROR_HALT, CURL_ERROR_MSG);
 }
 
-void curl_finalize(void) { 
+MORPHO_EXTENSION_EXPORT void curl_finalize(void) { 
     curl_global_cleanup();
 }
