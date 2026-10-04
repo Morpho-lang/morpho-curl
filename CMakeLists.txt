@@ -72,3 +72,11 @@ endif()
 install(TARGETS curl
     LIBRARY DESTINATION lib
 )
+
+# Install DLLs that sit beside the plugin.
+if(WIN32)
+    install(DIRECTORY "$<TARGET_FILE_DIR:curl>/"
+        DESTINATION lib
+        FILES_MATCHING PATTERN "*.dll"
+    )
+endif()
