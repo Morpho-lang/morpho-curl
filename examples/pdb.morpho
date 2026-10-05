@@ -2,11 +2,27 @@
 
 import curl 
 import parser
-import graphics
+import color
+import kdtree
+import graphics, morphoview
 
 /* Very simple PDB parser; not suitable for production purposes. 
    See PDB file format: 
    https://www.cgl.ucsf.edu/chimera/docs/UsersGuide/tutorials/pdbintro.html */
+
+/* CPK-like colors keyed by element letter. */
+var atomColors = {
+  "C" : Gray(0.5), "N" : Blue, "O" : Red, "H" : White, "S" : Yellow,
+  "P" : Orange, "F" : Green, "B" : Pink, "I" : Purple
+}
+
+/* Choose a color for an atom based on its element. */
+fn atomColor(name) {
+  var el = name[0]
+  if (el.isnumber() && name.count() > 1) el = name[1]
+  if (atomColors.contains(el)) return atomColors[el]
+  return Magenta
+}
 
 class PDBParser {
   init(str) {
@@ -20,18 +36,52 @@ class PDBParser {
         res = tokenizer.next(),
         chain = tokenizer.next(),
         seq = tokenizer.next(),
-        x = Float(tokenizer.next()),
-        y = Float(tokenizer.next()),
-        z = Float(tokenizer.next())
+        p = Matrix([Float(tokenizer.next()),
+                    Float(tokenizer.next()),
+                    Float(tokenizer.next())])
 
-    print "${id} ${name}: ${x} ${y} ${z}"
-    self.graphics.display(Sphere([x,y,z], 0.5))
+    self.positions.append(p)
+
+    print "${id} ${name}: ${p[0]} ${p[1]} ${p[2]}"
+    self.graphics.display(Sphere(p, 0.5, color=atomColor(name)))
+  }
+
+  /* Bonds are pairs within a covalent cutoff, drawn as cylinders. */
+  _drawBonds() {
+    if (self.positions.count() == 0) return
+
+    var indexOf = Dictionary()
+    for (p, i in self.positions) indexOf[p] = i
+
+    var tree = KDTree(self.positions)
+    var cutoff = 2
+    for (p, i in self.positions) {
+      var hits = tree.search([[p[0]-cutoff, p[0]+cutoff],
+                              [p[1]-cutoff, p[1]+cutoff],
+                              [p[2]-cutoff, p[2]+cutoff]])
+      for (node in hits) {
+        var q = node.location
+        if (indexOf[q] <= i) continue
+        if ((p-q).norm() <= cutoff) {
+          self.graphics.display(Cylinder(p, q, radius=0.15, color=Gray(0.25)))
+        }
+      }
+    }
+  }
+
+  /* Crystal structures omit MODEL/ENDMDL; that file is model 1. */
+  _hasModelRecords() {
+    for (line in self.str) {
+      if (Tokenizer(StringStream(line)).next()=="MODEL") return true
+    }
+    return false
   }
 
   _domodel(n, all) {
-    self.graphics = Graphics() 
+    self.graphics = Graphics()
+    self.positions = []
 
-    var inmodel=all
+    var inmodel = all || (n==1 && !self._hasModelRecords())
     for (line in self.str) {
       var tokenizer=Tokenizer(StringStream(line))
 
@@ -47,6 +97,7 @@ class PDBParser {
       }
     }
 
+    self._drawBonds()
     return self.graphics
   }
 
@@ -59,9 +110,9 @@ class PDBParser {
   }
 }
 
-// Ubiquitin: "https://files.rcsb.org/download/6NXL.pdb"
-
+//var url = "https://files.rcsb.org/download/6NXL.pdb" // Ubiquitin 
 var url = "https://files.rcsb.org/download/2MVH.pdb" // A small protein 
+
 var protein = Curl(url).fetch() 
 
 var prs = PDBParser(protein)
